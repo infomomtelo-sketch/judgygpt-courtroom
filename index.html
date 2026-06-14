@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Courtroom — JudgyGPT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #1f120b;
@@ -27,14 +28,15 @@
     min-height: 100vh;
     background: var(--bg);
     color: var(--text);
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 18px;
     -webkit-font-smoothing: antialiased;
   }
 
   .wrap {
     max-width: 640px;
     margin: 0 auto;
-    padding: 0 20px 100px;
+    padding: 0 20px 140px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -57,6 +59,7 @@
   header p {
     margin: 0;
     font-size: 14px;
+    font-family: 'Inter', -apple-system, sans-serif;
     color: var(--text-dim);
   }
 
@@ -66,6 +69,7 @@
     gap: 18px;
     margin-top: 14px;
     font-size: 13px;
+    font-family: 'Inter', -apple-system, sans-serif;
   }
 
   .pill {
@@ -93,17 +97,18 @@
 
   .msg {
     max-width: 82%;
-    padding: 10px 14px;
+    padding: 12px 16px;
     border-radius: 4px 14px 14px 14px;
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 18px;
+    line-height: 1.55;
     border-left: 3px solid transparent;
     background: var(--bg-elevated);
   }
 
   .msg .who {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
+    font-family: 'Inter', -apple-system, sans-serif;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 4px;
@@ -163,7 +168,7 @@
   .verdict p {
     margin: 0;
     font-family: 'Playfair Display', serif;
-    font-size: 17px;
+    font-size: 19px;
     font-style: italic;
     line-height: 1.6;
     color: var(--text);
@@ -173,8 +178,9 @@
   .composer {
     position: sticky;
     bottom: 0;
-    background: linear-gradient(to top, var(--bg) 60%, transparent);
-    padding: 16px 0 0;
+    background: var(--bg);
+    box-shadow: 0 -16px 24px -8px var(--bg);
+    padding: 16px 0 24px;
   }
 
   .composer-inner {
@@ -192,7 +198,7 @@
     background: none;
     border: none;
     color: var(--text);
-    font-family: inherit;
+    font-family: 'Inter', -apple-system, sans-serif;
     font-size: 15px;
     resize: none;
     padding: 10px 0;
@@ -223,6 +229,7 @@
   .composer-hint {
     text-align: center;
     font-size: 11px;
+    font-family: 'Inter', -apple-system, sans-serif;
     color: var(--text-dim);
     margin-top: 8px;
   }
@@ -273,32 +280,14 @@
     <p>Two sides. One verdict. Judgy presides.</p>
     <div class="session-info">
       <span class="pill"><span class="dot dot-u1"></span> You</span>
-      <span class="pill"><span class="dot dot-u2"></span> Invited — waiting…</span>
+      <span class="pill" id="invitedPill"><span class="dot dot-u2"></span> Invited — waiting…</span>
     </div>
   </header>
 
   <div class="feed" id="feed">
     <div class="verdict">
       <span class="who">The Court is now in session</span>
-      <p>Say whatever you want. Judgy doesn't wait his turn — and he doesn't care whose feelings he hurts.</p>
-    </div>
-
-    <!-- Example messages — replace with live data -->
-    <div class="msg u1">
-      <span class="who">You</span>
-      He said he'd call and never did. Three days now.
-    </div>
-    <div class="verdict interrupt">
-      <span class="who">⚡ Judgy interrupts</span>
-      <p>Three days? Honey, that's not silence, that's a restraining order with extra steps. Continue — I'm taking notes for the divorce.</p>
-    </div>
-    <div class="msg u2">
-      <span class="who">Invited</span>
-      I was busy! I told them that already.
-    </div>
-    <div class="verdict">
-      <span class="who">The Bench Rules</span>
-      <p>"Busy" is doing a lot of unpaid overtime in this relationship. The court finds the call was, in fact, possible — you just didn't want to.</p>
+      <p>Loading the case…</p>
     </div>
   </div>
 
@@ -311,19 +300,30 @@
       <textarea id="input" placeholder="State your case…" rows="1"></textarea>
       <button id="send" aria-label="Send to the court">➤</button>
     </div>
-    <p class="composer-hint">Share this case's link to invite the other side</p>
+    <p class="composer-hint" id="composerHint">Share this case's link to invite the other side</p>
   </div>
 
 </div>
 
 <script>
-  // Placeholder client-side wiring — to be replaced with Supabase Realtime.
+  // ---- Supabase setup ----
+  const SUPABASE_URL = 'https://dmemzljerldzeiwqfxzp.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtZW16bGplcmxkemVpd3FmeHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDMxNzgsImV4cCI6MjA5NDIxOTE3OH0.u4FL1mk555dUesVNjF58pXwkQlvvQYQgR5JpcxRtB40';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   const feed = document.getElementById('feed');
   const input = document.getElementById('input');
   const send = document.getElementById('send');
   const asU1 = document.getElementById('asU1');
   const asU2 = document.getElementById('asU2');
+  const invitedPill = document.getElementById('invitedPill');
+  const composerHint = document.getElementById('composerHint');
+
   let speakingAs = 'u1';
+  let sessionId = null;
+  let isInvitee = false;
+
+  const OPENING_MESSAGE = "Court's in session — but it's just you and me right now. Ask me anything, vent, or tell me what's going on. I'll keep the seat warm for the other side.";
 
   asU1.addEventListener('click', () => setSpeaker('u1'));
   asU2.addEventListener('click', () => setSpeaker('u2'));
@@ -347,30 +347,156 @@
     }
   });
 
-  function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
-
-    const msg = document.createElement('div');
-    msg.className = `msg ${speakingAs}`;
-    const label = speakingAs === 'u1' ? 'You' : 'Invited';
-    msg.innerHTML = `<span class="who">${label}</span>${escapeHtml(text)}`;
-    feed.appendChild(msg);
-
-    input.value = '';
-    input.style.height = 'auto';
-    feed.scrollTop = feed.scrollHeight;
-    window.scrollTo(0, document.body.scrollHeight);
-
-    // TODO: send to Supabase Realtime channel for this session
-    // TODO: trigger Judgy verdict after both sides have spoken
-  }
-
   function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
   }
+
+  // ---- Rendering ----
+  function renderMessages(messages) {
+    feed.innerHTML = '';
+    if (!messages || messages.length === 0) {
+      feed.appendChild(makeVerdict('The Court is now in session', OPENING_MESSAGE));
+      return;
+    }
+    messages.forEach(m => {
+      if (m.type === 'verdict' || m.type === 'interrupt') {
+        const who = m.type === 'interrupt' ? '⚡ Judgy interrupts' : 'The Bench Rules';
+        const el = makeVerdict(who, m.text);
+        if (m.type === 'interrupt') el.classList.add('interrupt');
+        feed.appendChild(el);
+      } else {
+        const div = document.createElement('div');
+        div.className = `msg ${m.who}`;
+        const label = m.who === 'u1' ? 'You' : 'Invited';
+        div.innerHTML = `<span class="who">${label}</span>${escapeHtml(m.text)}`;
+        feed.appendChild(div);
+      }
+    });
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+
+  function makeVerdict(who, text) {
+    const div = document.createElement('div');
+    div.className = 'verdict';
+    div.innerHTML = `<span class="who">${who}</span><p>${escapeHtml(text)}</p>`;
+    return div;
+  }
+
+  // ---- Session load / create ----
+  async function init() {
+    const params = new URLSearchParams(window.location.search);
+    sessionId = params.get('case');
+
+    if (!sessionId) {
+      // New session — this browser is the inviter (u1)
+      const { data, error } = await sb
+        .from('courtroom_sessions')
+        .insert({ messages: [] })
+        .select()
+        .single();
+
+      if (error) {
+        feed.innerHTML = '';
+        feed.appendChild(makeVerdict('The Court cannot convene', 'Something went wrong starting this case. Please refresh and try again.'));
+        console.error(error);
+        return;
+      }
+
+      sessionId = data.id;
+      const url = new URL(window.location.href);
+      url.searchParams.set('case', sessionId);
+      window.history.replaceState({}, '', url);
+      renderMessages(data.messages);
+      updateInvitedPill(data.invitee_joined);
+    } else {
+      // Existing session — load it
+      isInvitee = true;
+      setSpeaker('u2');
+
+      const { data, error } = await sb
+        .from('courtroom_sessions')
+        .select()
+        .eq('id', sessionId)
+        .single();
+
+      if (error || !data) {
+        feed.innerHTML = '';
+        feed.appendChild(makeVerdict('Case not found', "This case doesn't exist or may have ended."));
+        return;
+      }
+
+      renderMessages(data.messages);
+      updateInvitedPill(true); // this client IS the invitee
+      composerHint.textContent = "You've joined this case. Speak freely.";
+
+      if (!data.invitee_joined) {
+        await sb.from('courtroom_sessions')
+          .update({ invitee_joined: true })
+          .eq('id', sessionId);
+      }
+    }
+
+    subscribeToSession();
+  }
+
+  function updateInvitedPill(joined) {
+    if (joined) {
+      invitedPill.innerHTML = '<span class="dot dot-u2"></span> Invited — joined';
+    } else {
+      invitedPill.innerHTML = '<span class="dot dot-u2"></span> Invited — waiting…';
+    }
+  }
+
+  // ---- Realtime ----
+  function subscribeToSession() {
+    sb.channel(`session-${sessionId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'courtroom_sessions',
+        filter: `id=eq.${sessionId}`
+      }, (payload) => {
+        renderMessages(payload.new.messages);
+        updateInvitedPill(payload.new.invitee_joined);
+      })
+      .subscribe();
+  }
+
+  // ---- Sending ----
+  async function sendMessage() {
+    const text = input.value.trim();
+    if (!text || !sessionId) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+
+    const { data: current, error: fetchErr } = await sb
+      .from('courtroom_sessions')
+      .select('messages')
+      .eq('id', sessionId)
+      .single();
+
+    if (fetchErr) { console.error(fetchErr); return; }
+
+    const messages = current.messages || [];
+    messages.push({ type: 'message', who: speakingAs, text });
+
+    const { error } = await sb
+      .from('courtroom_sessions')
+      .update({ messages })
+      .eq('id', sessionId);
+
+    if (error) { console.error(error); return; }
+
+    renderMessages(messages);
+
+    // TODO: call Worker -> Anthropic API for Judgy's response (interrupt/verdict),
+    // then append result to `messages` and update the row similarly.
+  }
+
+  init();
 </script>
 </body>
 </html>
