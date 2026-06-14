@@ -1,4 +1,26 @@
-<!DOCTYPE html>
+// Cloudflare Worker — JudgyGPT Courtroom
+// Serves the static courtroom page at "/" and handles AI responses at "/judgy"
+// Set ANTHROPIC_API_KEY: Worker -> Settings -> Variables -> add encrypted variable
+
+const SYSTEM_PROMPT = `You are Judgy, presiding over a live courtroom session between two people working through a real conflict — could be family, friends, neighbors, coworkers, or partners.
+
+PERSONALITY: Sharp-tongued, funny, a little mean — but never cruel about anyone's identity (no jokes about race, disability, etc.). Your meanness targets behavior and choices, not the person's worth.
+
+CORE GOAL: Help both people move forward. Nobody "wins." Every verdict should point toward growth, acceptance, or reconciliation — never assign permanent blame.
+
+BEHAVIOR:
+- You don't wait for a "complete case." If something is funny, contradictory, or worth calling out, interrupt immediately — even after just one message.
+- Interrupts are short (1-2 sentences), punchy, in character.
+- After both sides have spoken a bit, or when the conversation reaches a natural point, deliver a "verdict": acknowledge both sides without ranking them, reframe what the conflict is really about, and offer one small concrete step forward for each side. Verdicts can still be funny, but end on something that opens a door — never "case closed."
+- If only one person has spoken so far (the other hasn't joined yet), respond as a normal conversational partner — still in character, funny and a little sharp, but don't reference "both sides" yet.
+- If the conversation touches something genuinely heavy (e.g. abuse, self-harm, infidelity causing real distress), drop the jokes for that beat and respond with warmth and honesty before returning to character if appropriate.
+
+OUTPUT FORMAT: Respond with ONLY valid JSON, no markdown, no preamble:
+{ "type": "interrupt" | "verdict" | "reply", "text": "..." }
+
+Use "reply" for normal back-and-forth before a verdict is warranted. Use "interrupt" for a quick in-character jab mid-conversation. Use "verdict" for the acknowledge/reframe/forward-path ruling.`;
+
+const HTML_PAGE = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -361,16 +383,19 @@
       return;
     }
     messages.forEach(m => {
-      if (m.type === 'verdict' || m.type === 'interrupt') {
-        const who = m.type === 'interrupt' ? '⚡ Judgy interrupts' : 'The Bench Rules';
+      if (m.type === 'verdict' || m.type === 'interrupt' || m.type === 'reply') {
+        let who = 'Judgy says';
+        if (m.type === 'interrupt') who = '⚡ Judgy interrupts';
+        if (m.type === 'verdict') who = 'The Bench Rules';
         const el = makeVerdict(who, m.text);
         if (m.type === 'interrupt') el.classList.add('interrupt');
+        if (m.type === 'reply') el.classList.add('interrupt');
         feed.appendChild(el);
       } else {
         const div = document.createElement('div');
-        div.className = `msg ${m.who}`;
+        div.className = 'msg ' + m.who;
         const label = m.who === 'u1' ? 'You' : 'Invited';
-        div.innerHTML = `<span class="who">${label}</span>${escapeHtml(m.text)}`;
+        div.innerHTML = '<span class="who">' + label + '</span>' + escapeHtml(m.text);
         feed.appendChild(div);
       }
     });
@@ -380,7 +405,7 @@
   function makeVerdict(who, text) {
     const div = document.createElement('div');
     div.className = 'verdict';
-    div.innerHTML = `<span class="who">${who}</span><p>${escapeHtml(text)}</p>`;
+    div.innerHTML = '<span class="who">' + who + '</span><p>' + escapeHtml(text) + '</p>';
     return div;
   }
 
@@ -390,7 +415,6 @@
     sessionId = params.get('case');
 
     if (!sessionId) {
-      // New session — this browser is the inviter (u1)
       const { data, error } = await sb
         .from('courtroom_sessions')
         .insert({ messages: [] })
@@ -411,7 +435,6 @@
       renderMessages(data.messages);
       updateInvitedPill(data.invitee_joined);
     } else {
-      // Existing session — load it
       isInvitee = true;
       setSpeaker('u2');
 
@@ -428,7 +451,7 @@
       }
 
       renderMessages(data.messages);
-      updateInvitedPill(true); // this client IS the invitee
+      updateInvitedPill(true);
       composerHint.textContent = "You've joined this case. Speak freely.";
 
       if (!data.invitee_joined) {
@@ -451,12 +474,12 @@
 
   // ---- Realtime ----
   function subscribeToSession() {
-    sb.channel(`session-${sessionId}`)
+    sb.channel('session-' + sessionId)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'courtroom_sessions',
-        filter: `id=eq.${sessionId}`
+        filter: 'id=eq.' + sessionId
       }, (payload) => {
         renderMessages(payload.new.messages);
         updateInvitedPill(payload.new.invitee_joined);
@@ -465,6 +488,8 @@
   }
 
   // ---- Sending ----
+  const JUDGY_WORKER_URL = '/judgy';
+
   async function sendMessage() {
     const text = input.value.trim();
     if (!text || !sessionId) return;
@@ -481,22 +506,155 @@
     if (fetchErr) { console.error(fetchErr); return; }
 
     const messages = current.messages || [];
-    messages.push({ type: 'message', who: speakingAs, text });
+    messages.push({ type: 'message', who: speakingAs, text: text });
 
     const { error } = await sb
       .from('courtroom_sessions')
-      .update({ messages })
+      .update({ messages: messages })
       .eq('id', sessionId);
 
     if (error) { console.error(error); return; }
 
     renderMessages(messages);
+    await fetchJudgyResponse(messages);
+  }
 
-    // TODO: call Worker -> Anthropic API for Judgy's response (interrupt/verdict),
-    // then append result to `messages` and update the row similarly.
+  async function fetchJudgyResponse(messages) {
+    const thinking = makeVerdict('⚖', '…');
+    thinking.id = 'judgyThinking';
+    feed.appendChild(thinking);
+    window.scrollTo(0, document.body.scrollHeight);
+
+    try {
+      const res = await fetch(JUDGY_WORKER_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: messages }),
+      });
+
+      const judgyMsg = await res.json();
+      const thinkingEl = document.getElementById('judgyThinking');
+      if (thinkingEl) thinkingEl.remove();
+
+      if (judgyMsg.error) {
+        console.error(judgyMsg.error);
+        feed.appendChild(makeVerdict('The Court is silent', "Judgy seems to be in chambers. Try again in a moment."));
+        return;
+      }
+
+      const validTypes = ['interrupt', 'verdict', 'reply'];
+      const type = validTypes.includes(judgyMsg.type) ? judgyMsg.type : 'reply';
+      const entry = { type: type, text: judgyMsg.text };
+      messages.push(entry);
+
+      await sb.from('courtroom_sessions')
+        .update({ messages: messages })
+        .eq('id', sessionId);
+
+      renderMessages(messages);
+    } catch (e) {
+      const thinkingEl = document.getElementById('judgyThinking');
+      if (thinkingEl) thinkingEl.remove();
+      console.error(e);
+      feed.appendChild(makeVerdict('The Court is silent', "Couldn't reach Judgy. Check your connection and try again."));
+    }
   }
 
   init();
 </script>
 </body>
-</html>
+</html>`;
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+
+    // ---- AI endpoint ----
+    if (url.pathname === '/judgy') {
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      };
+
+      if (request.method === 'OPTIONS') {
+        return new Response(null, { headers: corsHeaders });
+      }
+
+      if (request.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+          status: 405,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+
+      try {
+        const body = await request.json();
+        const messages = body.messages || [];
+
+        const bothJoined = messages.some(m => m.who === 'u1') && messages.some(m => m.who === 'u2');
+
+        const conversationText = messages
+          .filter(m => m.type === 'message')
+          .map(m => (m.who === 'u1' ? 'Person A' : 'Person B') + ': ' + m.text)
+          .join('\n');
+
+        const contextNote = bothJoined
+          ? 'Both people are present in this session.'
+          : 'Only Person A has spoken so far — Person B has not joined yet.';
+
+        const userPrompt = contextNote + '\n\nConversation so far:\n' + conversationText + '\n\nRespond as Judgy with your next message in the required JSON format.';
+
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 400,
+            system: SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: userPrompt }],
+          }),
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          return new Response(JSON.stringify({ error: 'AI request failed', detail: errText }), {
+            status: 502,
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          });
+        }
+
+        const data = await response.json();
+        const textBlock = data.content && data.content.find(c => c.type === 'text');
+        const rawText = textBlock ? textBlock.text : '';
+
+        const cleaned = rawText.replace(/```json|```/g, '').trim();
+        let parsed;
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch (e) {
+          parsed = { type: 'reply', text: cleaned };
+        }
+
+        return new Response(JSON.stringify(parsed), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        });
+      }
+    }
+
+    // ---- Static page ----
+    return new Response(HTML_PAGE, {
+      headers: { 'Content-Type': 'text/html;charset=UTF-8' },
+    });
+  },
+};
