@@ -227,11 +227,25 @@
   .as-toggle button:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
 
   .composer-hint {
+    display: block;
+    width: 100%;
     text-align: center;
     font-size: 11px;
     font-family: 'Inter', -apple-system, sans-serif;
+    color: var(--gold);
+    margin-top: 10px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .composer-hint:hover { border-color: var(--gold); color: var(--gold-bright); }
+  .composer-hint:disabled {
     color: var(--text-dim);
-    margin-top: 8px;
+    cursor: default;
+    border-color: var(--border);
   }
 
   /* "speaking as" toggle */
@@ -300,7 +314,7 @@
       <textarea id="input" placeholder="State your case…" rows="1"></textarea>
       <button id="send" aria-label="Send to the court">➤</button>
     </div>
-    <p class="composer-hint" id="composerHint">Share this case's link to invite the other side</p>
+    <button class="composer-hint" id="composerHint" type="button">Share this case's link to invite the other side</button>
   </div>
 
 </div>
@@ -337,6 +351,18 @@
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = input.scrollHeight + 'px';
+  });
+
+  composerHint.addEventListener('click', async () => {
+    if (composerHint.disabled) return;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      const original = composerHint.textContent;
+      composerHint.textContent = 'Link copied — send it to the other side';
+      setTimeout(() => { composerHint.textContent = original; }, 2000);
+    } catch (e) {
+      composerHint.textContent = window.location.href;
+    }
   });
 
   send.addEventListener('click', sendMessage);
@@ -433,6 +459,7 @@
       renderMessages(data.messages);
       updateInvitedPill(true); // this client IS the invitee
       composerHint.textContent = "You've joined this case. Speak freely.";
+      composerHint.disabled = true;
 
       if (!data.invitee_joined) {
         await sb.from('courtroom_sessions')
