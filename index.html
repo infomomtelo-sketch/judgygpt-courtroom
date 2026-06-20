@@ -3,43 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Courtroom — Live AI Mediation | JudgyGPT</title>
+<title>The Courtroom — Live AI Mediation | JudgyGPT</title>
 <meta name="description" content="Two sides. One verdict. Judgy presides. Invite someone to The Courtroom for live AI-mediated conflict resolution. Free to try.">
 <meta name="keywords" content="AI mediation, settle argument online, live debate judge, AI conflict resolution, who is right, two sides one verdict">
 <link rel="canonical" href="https://judgygptonline.com/">
-
 <meta property="og:title" content="The Courtroom — Live AI Mediation">
 <meta property="og:description" content="Two sides. One verdict. Judgy presides. Invite someone and let AI settle it once and for all.">
 <meta property="og:url" content="https://judgygptonline.com">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://judgygptonline.com/og-image.jpeg">
-
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@judgyjudge">
 <meta name="twitter:title" content="The Courtroom — Live AI Mediation">
 <meta name="twitter:description" content="Two sides. One verdict. Judgy presides. Free to try.">
 <meta name="twitter:image" content="https://judgygptonline.com/og-image.jpeg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=Playfair+Display:ital,wght@0,600;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg: #1f120b;
-    --bg-elevated: #2a190f;
-    --wood: #3a2418;
-    --gold: #c9a14a;
-    --gold-bright: #f4d77c;
-    --u1: #7a93a8;
-    --u2: #b08585;
-    --text: #f3ece2;
-    --text-dim: #b8a99a;
-    --border: rgba(201, 161, 74, 0.25);
+    --bg:         #0D0D0D;
+    --bg2:        #141414;
+    --card:       #1E1E1E;
+    --card2:      #252525;
+    --gold:       #E8B84B;
+    --gold-bright:#F5D278;
+    --gold-dim:   rgba(232,184,75,0.09);
+    --u1:         #7B9FFF;
+    --u2:         #FF8FAB;
+    --text:       #FFFFFF;
+    --text-dim:   #C8BFA8;
+    --text-muted: #6A6050;
+    --border:     rgba(232,184,75,0.20);
+    --border-hard:rgba(255,255,255,0.08);
   }
 
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    margin: 0;
     min-height: 100vh;
     background: var(--bg);
     color: var(--text);
@@ -51,111 +52,153 @@
   .wrap {
     max-width: 640px;
     margin: 0 auto;
-    padding: 0 20px 140px;
+    padding: 0 20px 160px;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
   }
 
+  /* ── HEADER ── */
   header {
     padding: 28px 0 20px;
     text-align: center;
     border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .header-brand {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    opacity: 0.75;
   }
 
   header h1 {
-    font-family: 'Playfair Display', serif;
-    font-weight: 600;
-    font-size: 28px;
-    margin: 0 0 4px;
-    letter-spacing: 0.5px;
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 26px;
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+    color: var(--text);
+    text-transform: uppercase;
   }
 
   header p {
     margin: 0;
     font-size: 14px;
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'Inter', sans-serif;
     color: var(--text-dim);
+    letter-spacing: 0.05em;
   }
 
   .session-info {
     display: flex;
     justify-content: center;
-    gap: 18px;
-    margin-top: 14px;
-    font-size: 13px;
-    font-family: 'Inter', -apple-system, sans-serif;
+    gap: 12px;
+    margin-top: 16px;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
   }
 
   .pill {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
+    padding: 5px 12px;
     border-radius: 999px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
+    background: var(--card);
+    border: 1px solid var(--border-hard);
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
   }
 
-  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
   .dot-u1 { background: var(--u1); }
   .dot-u2 { background: var(--u2); }
 
-  /* feed */
+  /* ── FEED ── */
   .feed {
     flex: 1;
-    padding: 24px 0;
+    padding: 28px 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
   }
 
+  /* User messages */
   .msg {
     max-width: 82%;
-    padding: 12px 16px;
+    padding: 13px 16px;
     border-radius: 4px 14px 14px 14px;
-    font-size: 18px;
-    line-height: 1.55;
+    font-size: 16px;
+    line-height: 1.65;
     border-left: 3px solid transparent;
-    background: var(--bg-elevated);
+    background: var(--card);
+    border: 1px solid var(--border-hard);
+    color: #FFFFFF;
   }
 
   .msg .who {
     display: block;
-    font-size: 12px;
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 10px;
+    font-family: 'Inter', sans-serif;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom: 4px;
-    opacity: 0.75;
+    letter-spacing: 0.18em;
+    margin-bottom: 6px;
+    font-weight: 500;
   }
 
-  .msg.u1 { border-left-color: var(--u1); }
+  .msg.u1 {
+    border-left: 3px solid var(--u1);
+    background: #141A2E;
+    border-color: #1E2840;
+    border-left-color: var(--u1);
+    color: #DDEEFF;
+  }
   .msg.u1 .who { color: var(--u1); }
 
   .msg.u2 {
     align-self: flex-end;
-    border-left-color: var(--u2);
     border-radius: 14px 4px 14px 14px;
+    border-left: none;
+    border-right: 3px solid var(--u2);
+    background: #2A1420;
+    border-color: #3A1E2C;
+    border-right-color: var(--u2);
+    color: #FFE0EA;
   }
   .msg.u2 .who { color: var(--u2); }
 
   /* Judgy verdict */
   .verdict {
     align-self: center;
-    max-width: 92%;
+    width: 92%;
     text-align: center;
-    margin: 10px 0;
-    padding: 18px 20px;
-    border-top: 1px solid var(--gold);
-    border-bottom: 1px solid var(--gold);
+    margin: 6px 0;
+    padding: 20px 22px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--gold);
+    border-radius: 2px;
     position: relative;
   }
 
   .verdict::before {
     content: '⚖';
     display: block;
-    font-size: 18px;
+    font-size: 16px;
     color: var(--gold-bright);
     margin-bottom: 8px;
     letter-spacing: 0.3em;
@@ -163,141 +206,170 @@
 
   .verdict .who {
     display: block;
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    font-size: 13px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
     color: var(--gold);
-    margin-bottom: 8px;
-    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
   }
 
   .verdict.interrupt {
-    border-style: dashed;
-    opacity: 0.96;
+    border-color: rgba(232,184,75,0.4);
+    border-top-color: var(--gold-bright);
+    background: rgba(232,184,75,0.04);
   }
 
-  .verdict.interrupt .who {
-    color: var(--gold-bright);
-  }
+  .verdict.interrupt .who { color: var(--gold-bright); }
 
   .verdict p {
     margin: 0;
-    font-family: 'Playfair Display', serif;
-    font-size: 19px;
+    font-family: 'EB Garamond', serif;
+    font-size: 17px;
     font-style: italic;
-    line-height: 1.6;
-    color: var(--text);
+    line-height: 1.7;
+    color: #FFFFFF;
   }
 
-  /* input */
+  /* Thinking dots */
+  .thinking-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 0;
+  }
+  .thinking-dots span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    animation: tdBounce 1.2s ease infinite;
+    opacity: 0.5;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes tdBounce {
+    0%,60%,100% { transform: none; opacity: 0.4; }
+    30% { transform: translateY(-5px); opacity: 1; }
+  }
+
+  /* ── COMPOSER ── */
   .composer {
     position: sticky;
     bottom: 0;
-    background: var(--bg);
-    box-shadow: 0 -16px 24px -8px var(--bg);
-    padding: 16px 0 24px;
+    background: linear-gradient(to top, var(--bg) 80%, transparent);
+    padding: 20px 0 28px;
+  }
+
+  .as-toggle {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .as-toggle button {
+    background: var(--card);
+    border: 1px solid var(--border-hard);
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+  }
+
+  .as-toggle button.active.u1 {
+    border-color: var(--u1);
+    color: var(--u1);
+    background: rgba(123,159,255,0.08);
+  }
+
+  .as-toggle button.active.u2 {
+    border-color: var(--u2);
+    color: var(--u2);
+    background: rgba(255,143,171,0.08);
   }
 
   .composer-inner {
     display: flex;
     gap: 10px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: 16px;
+    background: var(--card);
+    border: 1px solid #333;
+    border-radius: 14px;
     padding: 6px 6px 6px 16px;
     align-items: flex-end;
+    transition: border-color 0.2s;
   }
 
-  .composer textarea {
+  .composer-inner:focus-within { border-color: var(--gold); }
+
+  .composer-inner textarea {
     flex: 1;
     background: none;
     border: none;
-    color: var(--text);
-    font-family: 'Inter', -apple-system, sans-serif;
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
     font-size: 15px;
     resize: none;
     padding: 10px 0;
     max-height: 120px;
     outline: none;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 
-  .composer textarea::placeholder { color: var(--text-dim); }
+  .composer-inner textarea::placeholder { color: var(--text-muted); }
 
   .composer-inner button {
     background: var(--gold);
-    color: var(--bg);
+    color: #0D0D0D;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     width: 42px;
     height: 42px;
     flex-shrink: 0;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     transition: background 0.15s ease;
+    font-weight: 700;
   }
 
   .composer-inner button:hover { background: var(--gold-bright); }
-  .composer button:focus-visible,
-  .as-toggle button:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
 
   .composer-hint {
     display: block;
     width: 100%;
     text-align: center;
     font-size: 11px;
-    font-family: 'Inter', -apple-system, sans-serif;
+    font-family: 'Inter', sans-serif;
     color: var(--gold);
     margin-top: 10px;
     background: none;
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 8px;
+    padding: 9px;
     cursor: pointer;
     transition: all 0.15s ease;
+    letter-spacing: 0.05em;
   }
+
   .composer-hint:hover { border-color: var(--gold); color: var(--gold-bright); }
-  .composer-hint:disabled {
-    color: var(--text-dim);
-    cursor: default;
-    border-color: var(--border);
-  }
-
-  /* "speaking as" toggle */
-  .as-toggle {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .as-toggle button {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 999px;
-    cursor: pointer;
-    font-family: inherit;
-    white-space: nowrap;
-    transition: all 0.15s ease;
-  }
-
-  @media (max-width: 380px) {
-    .as-toggle button { font-size: 11px; padding: 5px 10px; }
-  }
-
-  .as-toggle button.active.u1 { border-color: var(--u1); color: var(--u1); }
-  .as-toggle button.active.u2 { border-color: var(--u2); color: var(--u2); }
+  .composer-hint:disabled { color: var(--text-muted); cursor: default; border-color: var(--border-hard); }
 
   @media (prefers-reduced-motion: no-preference) {
     .msg, .verdict { animation: rise 0.25s ease-out; }
   }
   @keyframes rise {
     from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @media (max-width: 380px) {
+    header h1 { font-size: 20px; }
+    .as-toggle button { font-size: 11px; padding: 5px 10px; }
   }
 </style>
 </head>
@@ -305,6 +377,7 @@
 <div class="wrap">
 
   <header>
+    <div class="header-brand">⚖ The Judgy</div>
     <h1>The Courtroom</h1>
     <p>Two sides. One verdict. Judgy presides.</p>
     <div class="session-info">
@@ -335,7 +408,6 @@
 </div>
 
 <script>
-  // ---- Supabase setup ----
   const SUPABASE_URL = 'https://dmemzljerldzeiwqfxzp.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtZW16bGplcmxkemVpd3FmeHpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2NDMxNzgsImV4cCI6MjA5NDIxOTE3OH0.u4FL1mk555dUesVNjF58pXwkQlvvQYQgR5JpcxRtB40';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -382,10 +454,7 @@
 
   send.addEventListener('click', sendMessage);
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   });
 
   function escapeHtml(str) {
@@ -394,7 +463,6 @@
     return div.innerHTML;
   }
 
-  // ---- Rendering ----
   function renderMessages(messages) {
     feed.innerHTML = '';
     if (!messages || messages.length === 0) {
@@ -407,8 +475,7 @@
         if (m.type === 'interrupt') who = '⚡ Judgy interrupts';
         if (m.type === 'verdict') who = 'The Bench Rules';
         const el = makeVerdict(who, m.text);
-        if (m.type === 'interrupt') el.classList.add('interrupt');
-        if (m.type === 'reply') el.classList.add('interrupt');
+        if (m.type === 'interrupt' || m.type === 'reply') el.classList.add('interrupt');
         feed.appendChild(el);
       } else {
         const div = document.createElement('div');
@@ -428,13 +495,19 @@
     return div;
   }
 
-  // ---- Session load / create ----
+  function makeThinking() {
+    const div = document.createElement('div');
+    div.className = 'verdict';
+    div.id = 'judgyThinking';
+    div.innerHTML = `<span class="who">Judgy is ruling…</span><div class="thinking-dots"><span></span><span></span><span></span></div>`;
+    return div;
+  }
+
   async function init() {
     const params = new URLSearchParams(window.location.search);
     sessionId = params.get('case');
 
     if (!sessionId) {
-      // New session — this browser is the inviter (u1)
       const { data, error } = await sb
         .from('courtroom_sessions')
         .insert({ messages: [] })
@@ -444,7 +517,6 @@
       if (error) {
         feed.innerHTML = '';
         feed.appendChild(makeVerdict('The Court cannot convene', 'Something went wrong starting this case. Please refresh and try again.'));
-        console.error(error);
         return;
       }
 
@@ -455,7 +527,6 @@
       renderMessages(data.messages);
       updateInvitedPill(data.invitee_joined);
     } else {
-      // Existing session — load it
       isInvitee = true;
       setSpeaker('u2');
 
@@ -472,14 +543,12 @@
       }
 
       renderMessages(data.messages);
-      updateInvitedPill(true); // this client IS the invitee
+      updateInvitedPill(true);
       composerHint.textContent = "You've joined this case. Speak freely.";
       composerHint.disabled = true;
 
       if (!data.invitee_joined) {
-        await sb.from('courtroom_sessions')
-          .update({ invitee_joined: true })
-          .eq('id', sessionId);
+        await sb.from('courtroom_sessions').update({ invitee_joined: true }).eq('id', sessionId);
       }
     }
 
@@ -487,14 +556,11 @@
   }
 
   function updateInvitedPill(joined) {
-    if (joined) {
-      invitedPill.innerHTML = '<span class="dot dot-u2"></span> Invited — joined';
-    } else {
-      invitedPill.innerHTML = '<span class="dot dot-u2"></span> Invited — waiting…';
-    }
+    invitedPill.innerHTML = joined
+      ? '<span class="dot dot-u2"></span> Invited — joined'
+      : '<span class="dot dot-u2"></span> Invited — waiting…';
   }
 
-  // ---- Realtime ----
   function subscribeToSession() {
     sb.channel(`session-${sessionId}`)
       .on('postgres_changes', {
@@ -509,7 +575,6 @@
       .subscribe();
   }
 
-  // ---- Sending ----
   const JUDGY_WORKER_URL = 'https://judgygpt-courtroom-a1.infomomtelo.workers.dev/judgy';
 
   async function sendMessage() {
@@ -542,9 +607,7 @@
   }
 
   async function fetchJudgyResponse(messages) {
-    // Show a quick "thinking" placeholder
-    const thinking = makeVerdict('⚖', '…');
-    thinking.id = 'judgyThinking';
+    const thinking = makeThinking();
     feed.appendChild(thinking);
     window.scrollTo(0, document.body.scrollHeight);
 
@@ -559,25 +622,19 @@
       document.getElementById('judgyThinking')?.remove();
 
       if (judgyMsg.error) {
-        console.error(judgyMsg.error);
         feed.appendChild(makeVerdict('The Court is silent', "Judgy seems to be in chambers. Try again in a moment."));
         return;
       }
 
-      // judgyMsg.type: "interrupt" | "verdict" | "reply"
       const validTypes = ['interrupt', 'verdict', 'reply'];
       const type = validTypes.includes(judgyMsg.type) ? judgyMsg.type : 'reply';
       const entry = { type, text: judgyMsg.text };
       messages.push(entry);
 
-      await sb.from('courtroom_sessions')
-        .update({ messages })
-        .eq('id', sessionId);
-
+      await sb.from('courtroom_sessions').update({ messages }).eq('id', sessionId);
       renderMessages(messages);
     } catch (e) {
       document.getElementById('judgyThinking')?.remove();
-      console.error(e);
       feed.appendChild(makeVerdict('The Court is silent', "Couldn't reach Judgy. Check your connection and try again."));
     }
   }
